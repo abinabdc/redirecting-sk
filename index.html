@@ -1,74 +1,129 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WorkflowMax OAuth</title>
-  <style>
-    :root { color-scheme: light dark; }
-    body { font-family: ui-sans-serif, system-ui, sans-serif; margin: 0; padding: 1.5rem; max-width: 36rem; line-height: 1.5; }
-    h1 { font-size: 1.125rem; font-weight: 600; margin: 0 0 1rem; }
-    label { display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: #64748b; margin: 0.75rem 0 0.25rem; }
-    pre, .box { font-family: ui-monospace, monospace; font-size: 0.75rem; background: #f1f5f9; color: #0f172a; padding: 0.65rem 0.75rem; border-radius: 8px; overflow-x: auto; word-break: break-all; margin: 0; border: 1px solid #e2e8f0; }
-    .row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
-    button { font: inherit; font-size: 0.875rem; font-weight: 500; padding: 0.45rem 0.75rem; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; }
-    button:hover { background: #f8fafc; }
-    button.primary { background: #172554; color: #fff; border-color: #172554; }
-    button.primary:hover { background: #1e3a8a; }
-    .err { color: #b91c1c; font-size: 0.875rem; margin-top: 1rem; }
-    .hint { font-size: 0.8125rem; color: #64748b; margin-top: 1rem; }
-  </style>
-</head>
-<body>
-  <h1>Copy these into Territory Instruments Admin</h1>
-  <p class="hint">Use <strong>Copy for app</strong> in the desktop app, or copy JSON / individual fields.</p>
-
-  <div id="ok" style="display:none">
-    <label>Authorization code</label>
-    <pre id="codeBox"></pre>
-    <div class="row">
-      <button type="button" id="btnCode">Copy code</button>
-    </div>
-    <label>State</label>
-    <pre id="stateBox"></pre>
-    <div class="row">
-      <button type="button" id="btnState">Copy state</button>
-      <button type="button" class="primary" id="btnBundle">Copy for app</button>
-    </div>
-    <p class="hint">In the app: <strong>Paste from clipboard</strong>, then <strong>Complete connection</strong>.</p>
-  </div>
-  <p id="bad" class="err" style="display:none"></p>
-
-  <script>
+/* Deploy next to index.html as oauth-redirect.js (same folder on GitHub Pages). */
 (function () {
-  const q = new URLSearchParams(window.location.search);
-  const code = q.get('code');
-  const state = q.get('state') || '';
-  const ok = document.getElementById('ok');
-  const bad = document.getElementById('bad');
-  if (!code) {
-    bad.style.display = 'block';
-    bad.textContent = 'No code in URL. Finish login on WorkflowMax first.';
-    return;
+  function show(el, on) {
+    el.style.display = on ? "block" : "none";
   }
-  ok.style.display = 'block';
-  document.getElementById('codeBox').textContent = code;
-  document.getElementById('stateBox').textContent = state;
-  const bundle = JSON.stringify({ code: code, state: state });
-  function flash(btn, label) {
-    const t = btn.textContent;
-    btn.textContent = label;
-    setTimeout(function () { btn.textContent = t; }, 1200);
+
+  function decodePart(s) {
+    if (s == null || s === "") return s;
+    try {
+      return decodeURIComponent(s.replace(/\+/g, " "));
+    } catch (e) {
+      return s;
+    }
   }
-  function copy(txt, btn, msg) {
-    navigator.clipboard.writeText(txt).then(function () { flash(btn, msg); }).catch(function () {
-      prompt('Copy:', txt);
-    });
+
+  function parseOAuthQuery(search) {
+    var q = search.charAt(0) === "?" ? search.slice(1) : search;
+    var code = null;
+    var state = "";
+    try {
+      var sp = new URLSearchParams(q);
+      code = sp.get("code");
+      state = sp.get("state") || "";
+    } catch (e) {}
+    if (!code && q.indexOf("code=") !== -1) {
+      var cm = /(?:^|&)code=([^&]*)/.exec(q);
+      if (cm) code = decodePart(cm[1]);
+    }
+    if ((!state || state === "") && q.indexOf("state=") !== -1) {
+      var sm = /(?:^|&)state=([^&]*)/.exec(q);
+      if (sm) state = decodePart(sm[1]) || "";
+    }
+    return { code: code, state: state || "" };
   }
-  document.getElementById('btnCode').onclick = function () { copy(code, this, 'Copied'); };
-  document.getElementById('btnState').onclick = function () { copy(state, this, 'Copied'); };
-  document.getElementById('btnBundle').onclick = function () { copy(bundle, this, 'Copied'); };
+
+  var ok = document.getElementById("ok");
+  var bad = document.getElementById("bad");
+  var boot = document.getElementById("boot");
+
+  function run() {
+    try {
+      show(boot, false);
+      var href = window.location.href;
+      var search = window.location.search || "";
+      var parsed = parseOAuthQuery(search);
+      var code = parsed.code;
+      var state = parsed.state;
+
+      if (!code && href.indexOf("code=") !== -1) {
+        var qi = href.indexOf("?");
+        if (qi >= 0) parsed = parseOAuthQuery(href.slice(qi));
+        code = parsed.code;
+        state = parsed.state;
+      }
+
+      if (!code) {
+        show(bad, true);
+        bad.innerHTML =
+          "No <code>code</code> found in this page&rsquo;s query string. " +
+          "If the address bar has a long <code>?code=...</code> URL, use <strong>Copy full URL</strong> below and paste into the app.";
+        show(document.getElementById("fallback"), true);
+        var full = document.getElementById("fullUrl");
+        if (full) full.value = href;
+        return;
+      }
+
+      show(ok, true);
+      document.getElementById("codeBox").textContent = code;
+      document.getElementById("stateBox").textContent = state;
+      var bundle = JSON.stringify({ code: code, state: state });
+      var fullUrlEl = document.getElementById("fullUrl");
+      if (fullUrlEl) fullUrlEl.value = href;
+
+      function flash(btn, msg) {
+        var t = btn.textContent;
+        btn.textContent = msg;
+        setTimeout(function () {
+          btn.text.textContent = t;
+        }, 1400);
+      }
+      function fixFlash(btn, msg) {
+        var t = btn.textContent;
+        btn.textContent = msg;
+        setTimeout(function () {
+          btn.textContent = t;
+        }, 1400);
+      }
+
+      function copy(txt, btn, msg) {
+        function done() {
+          fixFlash(btn, msg || "Copied");
+        }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(txt).then(done).catch(function () {
+            window.prompt("Copy:", txt);
+          });
+        } else {
+          window.prompt("Copy:", txt);
+        }
+      }
+
+      document.getElementById("btnCode").onclick = function () {
+        copy(code, this, "Copied");
+      };
+      document.getElementById("btnState").onclick = function () {
+        copy(state, this, "Copied");
+      };
+      document.getElementById("btnBundle").onclick = function () {
+        copy(bundle, this, "Copied");
+      };
+      var btnFull = document.getElementById("btnFullUrl");
+      if (btnFull) {
+        btnFull.onclick = function () {
+          copy(href, this, "Copied");
+        };
+      }
+    } catch (err) {
+      show(boot, false);
+      show(bad, true);
+      bad.textContent = "Script error: " + String(err);
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", run);
+  } else {
+    run();
+  }
 })();
-  </script>
-</body>
-</html>
