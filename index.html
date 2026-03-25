@@ -59,5 +59,21 @@
   <noscript>
     <p class="err">Enable JavaScript for copy buttons, or paste the entire address bar into the desktop app.</p>
   </noscript>
+
+  <script>
+    /* If oauth-redirect.js is missing (404), you would otherwise see only “Reading redirect…”. */
+    window.addEventListener("load", function () {
+      setTimeout(function () {
+        var boot = document.getElementById("boot");
+        if (!boot || boot.style.display === "none") return;
+        boot.innerHTML =
+          "Could not run <code>oauth-redirect.js</code>. Copy <code>oauth_redirect_github.example.js</code> from the repo into this same folder and name it <code>oauth-redirect.js</code>.";
+        var row = document.getElementById("urlRow");
+        var ta = document.getElementById("fullUrl");
+        if (ta) ta.value = location.href;
+        if (row) row.style.display = "block";
+      }, 0);
+    });
+  </script>
 </body>
 </html>
