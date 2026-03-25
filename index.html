@@ -7,7 +7,25 @@
 </head>
 <body>
     <p>Redirecting to the app...</p>
+
+    <!-- because future is what defines the future. -->
+
     <script>
+const q = new URLSearchParams(window.location.search);
+const code = q.get('code');
+const state = q.get('state');
+if (code) {
+  const p = new URLSearchParams({ code, state: state || '' });
+  window.location.href = 'http://127.0.0.1:5000/callback?' + p.toString();
+} else {
+  document.body.innerHTML = '<p>No code.</p>';
+}
+</script>
+
+
+
+    
+    <!-- <script>
         // Extract the authorization code from the URL
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
@@ -33,6 +51,6 @@
             console.error('No authorization code found.');
             document.body.innerHTML = "<p>Authorization failed. No code received.</p>";
         }
-    </script>
+    </script> -->
 </body>
 </html>
