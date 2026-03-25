@@ -3,36 +3,71 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OAuth Redirect</title>
+  <title>WorkflowMax OAuth</title>
+  <style>
+    :root { color-scheme: light dark; }
+    body { font-family: ui-sans-serif, system-ui, sans-serif; margin: 0; padding: 1.5rem; max-width: 36rem; line-height: 1.5; }
+    h1 { font-size: 1.125rem; font-weight: 600; margin: 0 0 1rem; }
+    label { display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: #64748b; margin: 0.75rem 0 0.25rem; }
+    pre, .box { font-family: ui-monospace, monospace; font-size: 0.75rem; background: #f1f5f9; color: #0f172a; padding: 0.65rem 0.75rem; border-radius: 8px; overflow-x: auto; word-break: break-all; margin: 0; border: 1px solid #e2e8f0; }
+    .row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+    button { font: inherit; font-size: 0.875rem; font-weight: 500; padding: 0.45rem 0.75rem; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; }
+    button:hover { background: #f8fafc; }
+    button.primary { background: #172554; color: #fff; border-color: #172554; }
+    button.primary:hover { background: #1e3a8a; }
+    .err { color: #b91c1c; font-size: 0.875rem; margin-top: 1rem; }
+    .hint { font-size: 0.8125rem; color: #64748b; margin-top: 1rem; }
+  </style>
 </head>
-<body style="font-family: system-ui, sans-serif; margin: 2rem; max-width: 40rem;">
-  <p id="msg">Redirecting to the desktop app…</p>
-  <p id="manual" style="display: none;">
-    If nothing happens (Safari sometimes blocks auto-redirect from HTTPS to localhost),
-    <a id="link" href="#">tap here to open the app callback</a>.
-  </p>
+<body>
+  <h1>Copy these into Territory Instruments Admin</h1>
+  <p class="hint">Use <strong>Copy for app</strong> in the desktop app, or copy JSON / individual fields.</p>
+
+  <div id="ok" style="display:none">
+    <label>Authorization code</label>
+    <pre id="codeBox"></pre>
+    <div class="row">
+      <button type="button" id="btnCode">Copy code</button>
+    </div>
+    <label>State</label>
+    <pre id="stateBox"></pre>
+    <div class="row">
+      <button type="button" id="btnState">Copy state</button>
+      <button type="button" class="primary" id="btnBundle">Copy for app</button>
+    </div>
+    <p class="hint">In the app: <strong>Paste from clipboard</strong>, then <strong>Complete connection</strong>.</p>
+  </div>
+  <p id="bad" class="err" style="display:none"></p>
 
   <script>
 (function () {
   const q = new URLSearchParams(window.location.search);
   const code = q.get('code');
-  const state = q.get('state');
+  const state = q.get('state') || '';
+  const ok = document.getElementById('ok');
+  const bad = document.getElementById('bad');
   if (!code) {
-    document.getElementById('msg').textContent = 'No authorization code in URL.';
+    bad.style.display = 'block';
+    bad.textContent = 'No code in URL. Finish login on WorkflowMax first.';
     return;
   }
-  // Must match WORKFLOWMAX_LOCAL_CALLBACK in your .env (default http://localhost:5000/callback).
-  // Use "localhost" not "127.0.0.1" — Safari often shows "address is invalid" for 127.0.0.1 from GitHub Pages.
-  const target = new URL('http://localhost:5000/callback');
-  target.searchParams.set('code', code);
-  if (state != null && state !== '') {
-    target.searchParams.set('state', state);
+  ok.style.display = 'block';
+  document.getElementById('codeBox').textContent = code;
+  document.getElementById('stateBox').textContent = state;
+  const bundle = JSON.stringify({ code: code, state: state });
+  function flash(btn, label) {
+    const t = btn.textContent;
+    btn.textContent = label;
+    setTimeout(function () { btn.textContent = t; }, 1200);
   }
-  const href = target.toString();
-  const link = document.getElementById('link');
-  link.href = href;
-  document.getElementById('manual').style.display = 'block';
-  window.location.replace(href);
+  function copy(txt, btn, msg) {
+    navigator.clipboard.writeText(txt).then(function () { flash(btn, msg); }).catch(function () {
+      prompt('Copy:', txt);
+    });
+  }
+  document.getElementById('btnCode').onclick = function () { copy(code, this, 'Copied'); };
+  document.getElementById('btnState').onclick = function () { copy(state, this, 'Copied'); };
+  document.getElementById('btnBundle').onclick = function () { copy(bundle, this, 'Copied'); };
 })();
   </script>
 </body>
