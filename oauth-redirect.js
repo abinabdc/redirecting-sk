@@ -1,0 +1,122 @@
+/* Deploy next to index.html as oauth-redirect.js (same folder on GitHub Pages). */
+(function () {
+  function show(el, on) {
+    el.style.display = on ? "block" : "none";
+  }
+
+  function decodePart(s) {
+    if (s == null || s === "") return s;
+    try {
+      return decodeURIComponent(s.replace(/\+/g, " "));
+    } catch (e) {
+      return s;
+    }
+  }
+
+  function parseOAuthQuery(search) {
+    var q = search.charAt(0) === "?" ? search.slice(1) : search;
+    var code = null;
+    var state = "";
+    try {
+      var sp = new URLSearchParams(q);
+      code = sp.get("code");
+      state = sp.get("state") || "";
+    } catch (e) {}
+    if (!code && q.indexOf("code=") !== -1) {
+      var cm = /(?:^|&)code=([^&]*)/.exec(q);
+      if (cm) code = decodePart(cm[1]);
+    }
+    if ((!state || state === "") && q.indexOf("state=") !== -1) {
+      var sm = /(?:^|&)state=([^&]*)/.exec(q);
+      if (sm) state = decodePart(sm[1]) || "";
+    }
+    return { code: code, state: state || "" };
+  }
+
+  var ok = document.getElementById("ok");
+  var bad = document.getElementById("bad");
+  var boot = document.getElementById("boot");
+
+  function run() {
+    try {
+      show(boot, false);
+      var href = window.location.href;
+      var search = window.location.search || "";
+      var parsed = parseOAuthQuery(search);
+      var code = parsed.code;
+      var state = parsed.state;
+
+      if (!code && href.indexOf("code=") !== -1) {
+        var qi = href.indexOf("?");
+        if (qi >= 0) parsed = parseOAuthQuery(href.slice(qi));
+        code = parsed.code;
+        state = parsed.state;
+      }
+
+      if (!code) {
+        show(bad, true);
+        bad.innerHTML =
+          "No <code>code</code> found in this page&rsquo;s query string. " +
+          "If the address bar has a long <code>?code=...</code> URL, use <strong>Copy full URL</strong> below and paste into the app.";
+        show(document.getElementById("fallback"), true);
+        var full = document.getElementById("fullUrl");
+        if (full) full.value = href;
+        return;
+      }
+
+      show(ok, true);
+      document.getElementById("codeBox").textContent = code;
+      document.getElementById("stateBox").textContent = state;
+      var bundle = JSON.stringify({ code: code, state: state });
+      var fullUrlEl = document.getElementById("fullUrl");
+      if (fullUrlEl) fullUrlEl.value = href;
+
+      function flash(btn, msg) {
+        var t = btn.textContent;
+        btn.textContent = msg;
+        setTimeout(function () {
+          btn.textContent = t;
+        }, 1400);
+      }
+
+      function copy(txt, btn, msg) {
+        function done() {
+          flash(btn, msg || "Copied");
+        }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(txt).then(done).catch(function () {
+            window.prompt("Copy:", txt);
+          });
+        } else {
+          window.prompt("Copy:", txt);
+        }
+      }
+
+      document.getElementById("btnCode").onclick = function () {
+        copy(code, this, "Copied");
+      };
+      document.getElementById("btnState").onclick = function () {
+        copy(state, this, "Copied");
+      };
+      document.getElementById("btnBundle").onclick = function () {
+        copy(bundle, this, "Copied");
+      };
+      var btnFull = document.getElementById("btnFullUrl");
+      if (btnFull) {
+        btnFull.onclick = function () {
+          copy(href, this, "Copied");
+        };
+      }
+    } catch (err) {
+      show(boot, false);
+      show(bad, true);
+      bad.textContent = "Script error: " + String(err);
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", run);
+  } else {
+    run();
+  }
+})();
