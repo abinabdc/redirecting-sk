@@ -1,7 +1,7 @@
-/* Deploy next to index.html as oauth-redirect.js (same folder on GitHub Pages). */
+/* Save as oauth-redirect.js next to index.html on GitHub Pages. */
 (function () {
   function show(el, on) {
-    el.style.display = on ? "block" : "none";
+    if (el) el.style.display = on ? "block" : "none";
   }
 
   function decodePart(s) {
@@ -33,34 +33,63 @@
     return { code: code, state: state || "" };
   }
 
-  var ok = document.getElementById("ok");
-  var bad = document.getElementById("bad");
-  var boot = document.getElementById("boot");
-
   function run() {
+    var boot = document.getElementById("boot");
+    var ok = document.getElementById("ok");
+    var bad = document.getElementById("bad");
+    var href = window.location.href;
+    var search = window.location.search || "";
+
+    function flash(btn, msg) {
+      var t = btn.textContent;
+      btn.textContent = msg;
+      setTimeout(function () {
+        btn.textContent = t;
+      }, 1400);
+    }
+
+    function copy(txt, btn, msg) {
+      function done() {
+        flash(btn, msg || "Copied");
+      }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(txt).then(done).catch(function () {
+          window.prompt("Copy:", txt);
+        });
+      } else {
+        window.prompt("Copy:", txt);
+      }
+    }
+
     try {
       show(boot, false);
-      var href = window.location.href;
-      var search = window.location.search || "";
       var parsed = parseOAuthQuery(search);
       var code = parsed.code;
       var state = parsed.state;
-
       if (!code && href.indexOf("code=") !== -1) {
         var qi = href.indexOf("?");
-        if (qi >= 0) parsed = parseOAuthQuery(href.slice(qi));
-        code = parsed.code;
-        state = parsed.state;
+        if (qi >= 0) {
+          parsed = parseOAuthQuery(href.slice(qi));
+          code = parsed.code;
+          state = parsed.state;
+        }
+      }
+
+      var fullUrlEl = document.getElementById("fullUrl");
+      var urlRow = document.getElementById("urlRow");
+      var btnFull = document.getElementById("btnFullUrl");
+      if (fullUrlEl) fullUrlEl.value = href;
+      show(urlRow, true);
+      if (btnFull) {
+        btnFull.onclick = function () {
+          copy(href, btnFull, "Copied");
+        };
       }
 
       if (!code) {
         show(bad, true);
         bad.innerHTML =
-          "No <code>code</code> found in this page&rsquo;s query string. " +
-          "If the address bar has a long <code>?code=...</code> URL, use <strong>Copy full URL</strong> below and paste into the app.";
-        show(document.getElementById("fallback"), true);
-        var full = document.getElementById("fullUrl");
-        if (full) full.value = href;
+          "No <code>code</code> parsed. Your app can still use <strong>Copy full URL</strong> → paste in the desktop app.";
         return;
       }
 
@@ -68,29 +97,6 @@
       document.getElementById("codeBox").textContent = code;
       document.getElementById("stateBox").textContent = state;
       var bundle = JSON.stringify({ code: code, state: state });
-      var fullUrlEl = document.getElementById("fullUrl");
-      if (fullUrlEl) fullUrlEl.value = href;
-
-      function flash(btn, msg) {
-        var t = btn.textContent;
-        btn.textContent = msg;
-        setTimeout(function () {
-          btn.textContent = t;
-        }, 1400);
-      }
-
-      function copy(txt, btn, msg) {
-        function done() {
-          flash(btn, msg || "Copied");
-        }
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(txt).then(done).catch(function () {
-            window.prompt("Copy:", txt);
-          });
-        } else {
-          window.prompt("Copy:", txt);
-        }
-      }
 
       document.getElementById("btnCode").onclick = function () {
         copy(code, this, "Copied");
@@ -101,16 +107,13 @@
       document.getElementById("btnBundle").onclick = function () {
         copy(bundle, this, "Copied");
       };
-      var btnFull = document.getElementById("btnFullUrl");
-      if (btnFull) {
-        btnFull.onclick = function () {
-          copy(href, this, "Copied");
-        };
-      }
     } catch (err) {
       show(boot, false);
       show(bad, true);
       bad.textContent = "Script error: " + String(err);
+      show(document.getElementById("urlRow"), true);
+      var fu = document.getElementById("fullUrl");
+      if (fu) fu.value = href;
     }
   }
 
