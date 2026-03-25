@@ -1,4 +1,4 @@
-/* Save as oauth-redirect.js next to index.html on GitHub Pages. */
+/* Save as oauth-redirect.js next to index.html. */
 (function () {
   function show(el, on) {
     if (el) el.style.display = on ? "block" : "none";
@@ -89,23 +89,16 @@
       if (!code) {
         show(bad, true);
         bad.innerHTML =
-          "No <code>code</code> parsed. Your app can still use <strong>Copy full URL</strong> → paste in the desktop app.";
+          "No <code>code</code> in URL. Use <strong>Copy full URL</strong> below → paste in the app.";
         return;
       }
 
+      var payload = JSON.stringify({ code: code, state: state }, null, 2);
+      document.getElementById("jsonPreview").textContent = payload;
       show(ok, true);
-      document.getElementById("codeBox").textContent = code;
-      document.getElementById("stateBox").textContent = state;
-      var bundle = JSON.stringify({ code: code, state: state });
 
-      document.getElementById("btnCode").onclick = function () {
-        copy(code, this, "Copied");
-      };
-      document.getElementById("btnState").onclick = function () {
-        copy(state, this, "Copied");
-      };
-      document.getElementById("btnBundle").onclick = function () {
-        copy(bundle, this, "Copied");
+      document.getElementById("btnCopyApp").onclick = function () {
+        copy(payload, this, "Copied");
       };
     } catch (err) {
       show(boot, false);
