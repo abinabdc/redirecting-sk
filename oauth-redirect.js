@@ -1,5 +1,6 @@
 /* GitHub Pages OAuth relay -> desktop localhost listener. */
 (function () {
+  window.__oauthRelayLoaded = true;
   // Must match WFM_XERO_LOCAL_RELAY_URI in WFMAdmin .env.
   var LOCAL_RELAY_URL = "http://127.0.0.1:8766/wfm/callback";
 
@@ -108,60 +109,6 @@
       window.location.replace(relay);
     } catch (err) {
       fallback("Script error: " + String(err), "err");
-    }
-  }
-
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", run);
-  } else {
-    run();
-  }
-})();
-      show(boot, false);
-      var parsed = parseOAuthQuery(search);
-      var code = parsed.code;
-      var state = parsed.state;
-      if (!code && href.indexOf("code=") !== -1) {
-        var qi = href.indexOf("?");
-        if (qi >= 0) {
-          parsed = parseOAuthQuery(href.slice(qi));
-          code = parsed.code;
-          state = parsed.state;
-        }
-      }
-
-      var fullUrlEl = document.getElementById("fullUrl");
-      var urlRow = document.getElementById("urlRow");
-      var btnFull = document.getElementById("btnFullUrl");
-      if (fullUrlEl) fullUrlEl.value = href;
-      show(urlRow, true);
-      if (btnFull) {
-        btnFull.onclick = function () {
-          copy(href, btnFull, "Copied");
-        };
-      }
-
-      if (!code) {
-        show(bad, true);
-        bad.innerHTML =
-          "No <code>code</code> in URL. Use <strong>Copy full URL</strong> below → paste in the app.";
-        return;
-      }
-
-      var payload = JSON.stringify({ code: code, state: state }, null, 2);
-      document.getElementById("jsonPreview").textContent = payload;
-      show(ok, true);
-
-      document.getElementById("btnCopyApp").onclick = function () {
-        copy(payload, this, "Copied");
-      };
-    } catch (err) {
-      show(boot, false);
-      show(bad, true);
-      bad.textContent = "Script error: " + String(err);
-      show(document.getElementById("urlRow"), true);
-      var fu = document.getElementById("fullUrl");
-      if (fu) fu.value = href;
     }
   }
 
