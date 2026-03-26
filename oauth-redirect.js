@@ -1,5 +1,8 @@
-/* Save as oauth-redirect.js next to index.html. */
+/* GitHub Pages OAuth relay -> desktop localhost listener. */
 (function () {
+  // Must match WFM_XERO_LOCAL_RELAY_URI in WFMAdmin .env.
+  var LOCAL_RELAY_URL = "http://127.0.0.1:8766/wfm/callback";
+
   function show(el, on) {
     if (el) el.style.display = on ? "block" : "none";
   }
@@ -34,34 +37,86 @@
   }
 
   function run() {
-    var boot = document.getElementById("boot");
-    var ok = document.getElementById("ok");
-    var bad = document.getElementById("bad");
+    var statusEl = document.getElementById("status");
+    var fallbackEl = document.getElementById("fallback");
+    var fullUrlEl = document.getElementById("fullUrl");
+    var copyBtn = document.getElementById("btnCopyFullUrl");
     var href = window.location.href;
     var search = window.location.search || "";
 
-    function flash(btn, msg) {
-      var t = btn.textContent;
-      btn.textContent = msg;
-      setTimeout(function () {
-        btn.textContent = t;
-      }, 1400);
+    function setStatus(msg, cls) {
+      if (!statusEl) return;
+      statusEl.textContent = msg;
+      statusEl.className = cls || "muted";
     }
 
-    function copy(txt, btn, msg) {
-      function done() {
-        flash(btn, msg || "Copied");
-      }
+    function copyText(txt) {
       if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(txt).then(done).catch(function () {
-          window.prompt("Copy:", txt);
-        });
+        navigator.clipboard.writeText(txt);
       } else {
         window.prompt("Copy:", txt);
       }
     }
 
+    function fallback(msg, cssClass) {
+      setStatus(msg, cssClass || "warn");
+      if (fullUrlEl) fullUrlEl.value = href;
+      if (copyBtn) {
+        copyBtn.onclick = function () {
+          copyText(href);
+          copyBtn.textContent = "Copied";
+          setTimeout(function () {
+            copyBtn.textContent = "Copy full URL";
+          }, 1200);
+        };
+      }
+      show(fallbackEl, true);
+    }
+
     try {
+      var parsed = parseOAuthQuery(search);
+      var code = parsed.code;
+      var state = parsed.state;
+      if (!code && href.indexOf("code=") !== -1) {
+        var qi = href.indexOf("?");
+        if (qi >= 0) {
+          parsed = parseOAuthQuery(href.slice(qi));
+          code = parsed.code;
+          state = parsed.state;
+        }
+      }
+
+      if (!code) {
+        fallback("No OAuth code found in redirect URL.", "err");
+        return;
+      }
+
+      var relay =
+        LOCAL_RELAY_URL +
+        "?code=" +
+        encodeURIComponent(code) +
+        "&state=" +
+        encodeURIComponent(state || "");
+      setStatus("Handing off to desktop app…", "muted");
+
+      // Start fallback timer in case local app listener is not available.
+      setTimeout(function () {
+        fallback("Could not auto-open local app callback. Ensure the app is running, then retry sign-in.", "warn");
+      }, 1800);
+
+      // Forward to local relay.
+      window.location.replace(relay);
+    } catch (err) {
+      fallback("Script error: " + String(err), "err");
+    }
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", run);
+  } else {
+    run();
+  }
+})();
       show(boot, false);
       var parsed = parseOAuthQuery(search);
       var code = parsed.code;
