@@ -3,70 +3,70 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WorkflowMax OAuth</title>
-  <!--
-    Same folder on GitHub Pages:
-      index.html (this file)
-      oauth-redirect.js (from oauth_redirect_github.example.js)
-  -->
+  <title>Territory Instruments OAuth Relay</title>
   <style>
-    :root { color-scheme: light dark; }
-    body { font-family: ui-sans-serif, system-ui, sans-serif; margin: 0; padding: 1.5rem; max-width: 42rem; line-height: 1.5; }
-    h1 { font-size: 1.125rem; font-weight: 600; margin: 0 0 0.35rem; }
-    .hint { font-size: 0.875rem; color: #64748b; margin: 0 0 1rem; }
-    label { display: block; font-size: 0.65rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #64748b; margin: 0 0 0.4rem; }
-    pre#jsonPreview { font-family: ui-monospace, monospace; font-size: 0.68rem; line-height: 1.45; background: #f1f5f9; color: #0f172a; padding: 0.85rem 1rem; border-radius: 10px; overflow: auto; margin: 0 0 0.75rem; border: 1px solid #e2e8f0; max-height: 40vh; }
-    button.copy { font: inherit; font-size: 0.95rem; font-weight: 600; padding: 0.65rem 1.1rem; border-radius: 10px; border: none; background: #172554; color: #fff; cursor: pointer; width: 100%; max-width: 20rem; }
-    button.copy:hover { background: #1e3a8a; }
-    textarea#fullUrl { font-family: ui-monospace, monospace; font-size: 0.62rem; width: 100%; box-sizing: border-box; min-height: 4.5rem; padding: 0.55rem 0.6rem; border-radius: 8px; border: 1px solid #e2e8f0; background: #f8fafc; color: #0f172a; resize: vertical; }
-    .row { margin-top: 0.4rem; }
-    button.secondary { font: inherit; font-size: 0.8rem; padding: 0.4rem 0.65rem; border-radius: 8px; border: 1px solid #cbd5e1; background: #fff; cursor: pointer; }
-    button.secondary:hover { background: #f8fafc; }
-    .err { color: #b91c1c; font-size: 0.875rem; margin: 0.75rem 0 0; }
-    #boot { color: #64748b; font-size: 0.9rem; }
-    #fallbackUrl { margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid #e2e8f0; }
+    body {
+      font-family: ui-sans-serif, system-ui, sans-serif;
+      margin: 0;
+      padding: 1.5rem;
+      max-width: 42rem;
+      line-height: 1.5;
+      color: #0f172a;
+    }
+    h1 { font-size: 1.1rem; font-weight: 700; margin: 0 0 0.35rem; }
+    p { margin: 0.35rem 0 0; }
+    .muted { color: #64748b; font-size: 0.92rem; }
+    .ok { color: #14532d; }
+    .warn { color: #92400e; }
+    .err { color: #b91c1c; }
+    #card {
+      margin-top: 1rem;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 1rem;
+      background: #f8fafc;
+    }
+    #fallback {
+      margin-top: 0.85rem;
+      display: none;
+    }
+    textarea {
+      width: 100%;
+      min-height: 4rem;
+      box-sizing: border-box;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      background: #fff;
+      padding: 0.55rem 0.65rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.75rem;
+      color: #0f172a;
+      resize: vertical;
+    }
+    button {
+      margin-top: 0.5rem;
+      font: inherit;
+      font-size: 0.9rem;
+      padding: 0.5rem 0.8rem;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      background: #fff;
+      cursor: pointer;
+    }
   </style>
   <script src="oauth-redirect.js" defer></script>
 </head>
 <body>
-  <h1>Territory Instruments Admin</h1>
-  <p class="hint">Please copy the keys. In the app use <strong>Paste from clipboard and connect</strong>.</p>
-
-  <p id="boot">Reading redirect…</p>
-
-  <div id="ok" style="display:none">
-    <label>Ready for authentication.</label>
-    <pre id="jsonPreview"></pre>
-    <button type="button" class="copy" id="btnCopyApp">Copy</button>
-  </div>
-
-  <p id="bad" class="err" style="display:none"></p>
-
-  <div id="urlRow" style="display:none">
-    <div id="fallbackUrl">
-      <label>Fallback — full URL</label>
+  <h1>Territory Instruments OAuth Relay</h1>
+  <p class="muted">Completing sign-in and returning to your desktop app…</p>
+  <div id="card">
+    <p id="status" class="muted">Reading OAuth redirect parameters…</p>
+    <div id="fallback">
+      <p class="warn">Automatic handoff did not complete. Keep the app open and copy the full URL if support asks for it.</p>
       <textarea id="fullUrl" readonly rows="3" spellcheck="false"></textarea>
-      <div class="row"><button type="button" class="secondary" id="btnFullUrl">Copy full URL</button></div>
+      <button type="button" id="btnCopyFullUrl">Copy full URL</button>
     </div>
   </div>
-
-  <noscript>
-    <p class="err">Enable JavaScript, or paste the full address bar into the desktop app.</p>
-  </noscript>
-
-  <script>
-    window.addEventListener("load", function () {
-      setTimeout(function () {
-        var boot = document.getElementById("boot");
-        if (!boot || boot.style.display === "none") return;
-        boot.innerHTML =
-          "Add <code>oauth-redirect.js</code> next to this file (see repo <code>oauth_redirect_github.example.js</code>).";
-        var row = document.getElementById("urlRow");
-        var ta = document.getElementById("fullUrl");
-        if (ta) ta.value = location.href;
-        if (row) row.style.display = "block";
-      }, 0);
-    });
-  </script>
+  <noscript><p class="err">JavaScript is required for automatic handoff to the desktop app.</p></noscript>
 </body>
 </html>
