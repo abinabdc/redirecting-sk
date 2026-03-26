@@ -54,7 +54,7 @@
       cursor: pointer;
     }
   </style>
-  <script src="oauth-redirect.js" defer></script>
+  <script src="oauth-redirect.js?v=3" defer></script>
 </head>
 <body>
   <h1>Territory Instruments OAuth Relay</h1>
@@ -62,6 +62,29 @@
   <div id="card">
     <p id="status" class="muted">Reading OAuth redirect parameters…</p>
     <div id="fallback">
+      <p class="warn">Automatic handoff did not complete. Keep the app open and copy the full URL if support asks for it.</p>
+      <textarea id="fullUrl" readonly rows="3" spellcheck="false"></textarea>
+      <button type="button" id="btnCopyFullUrl">Copy full URL</button>
+    </div>
+  </div>
+  <noscript><p class="err">JavaScript is required for automatic handoff to the desktop app.</p></noscript>
+  <script>
+    window.setTimeout(function () {
+      if (window.__oauthRelayLoaded) return;
+      var statusEl = document.getElementById("status");
+      var fallbackEl = document.getElementById("fallback");
+      var fullUrlEl = document.getElementById("fullUrl");
+      if (statusEl) {
+        statusEl.textContent =
+          "Relay script did not load. Hard refresh this page (Cmd+Shift+R) and redeploy oauth-redirect.js.";
+        statusEl.className = "err";
+      }
+      if (fullUrlEl) fullUrlEl.value = window.location.href;
+      if (fallbackEl) fallbackEl.style.display = "block";
+    }, 1800);
+  </script>
+</body>
+</html>
       <p class="warn">Automatic handoff did not complete. Keep the app open and copy the full URL if support asks for it.</p>
       <textarea id="fullUrl" readonly rows="3" spellcheck="false"></textarea>
       <button type="button" id="btnCopyFullUrl">Copy full URL</button>
