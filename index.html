@@ -14,22 +14,15 @@
         
         if (code) {
 
-                     // window.location.href = `http://localhost:5173/dashboard/workflowmax/auth?code=${code}`;   //new dashboard being tested
-            // Redirect to your React app's OAuth callback route
-           // window.location.href = `http://localhost:5173/staff/auth/workflowmax?code=${code}`;
 
-                   // window.location.href = `http://localhost:5173/dashboard/wfm-authenticate?code=${code}`;
 
              window.location.href = `http://localhost:3000/api/workflowmax/callback?code=${code}`;
 
 
             
-            // window.location.href = `http://localhost:5076/0auth/callback/?code=${code}`;
-
-            // For production:
-            // window.location.href = `https://abinabdc.github.io/redirecting-web/oauth-callback?code=${code}`;
+        
         } else {
-            // If no code is found, show an error message
+
             console.error('No authorization code found.');
             document.body.innerHTML = "<p>Authorization failed. No code received.</p>";
         }
