@@ -1,95 +1,38 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Territory Instruments OAuth Relay</title>
-  <style>
-    body {
-      font-family: ui-sans-serif, system-ui, sans-serif;
-      margin: 0;
-      padding: 1.5rem;
-      max-width: 42rem;
-      line-height: 1.5;
-      color: #0f172a;
-    }
-    h1 { font-size: 1.1rem; font-weight: 700; margin: 0 0 0.35rem; }
-    p { margin: 0.35rem 0 0; }
-    .muted { color: #64748b; font-size: 0.92rem; }
-    .ok { color: #14532d; }
-    .warn { color: #92400e; }
-    .err { color: #b91c1c; }
-    #card {
-      margin-top: 1rem;
-      border: 1px solid #e2e8f0;
-      border-radius: 12px;
-      padding: 1rem;
-      background: #f8fafc;
-    }
-    #fallback {
-      margin-top: 0.85rem;
-      display: none;
-    }
-    textarea {
-      width: 100%;
-      min-height: 4rem;
-      box-sizing: border-box;
-      border: 1px solid #cbd5e1;
-      border-radius: 8px;
-      background: #fff;
-      padding: 0.55rem 0.65rem;
-      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-      font-size: 0.75rem;
-      color: #0f172a;
-      resize: vertical;
-    }
-    button {
-      margin-top: 0.5rem;
-      font: inherit;
-      font-size: 0.9rem;
-      padding: 0.5rem 0.8rem;
-      border-radius: 8px;
-      border: 1px solid #cbd5e1;
-      background: #fff;
-      cursor: pointer;
-    }
-  </style>
-  <script src="oauth-redirect.js?v=3" defer></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OAuth Redirect</title>
 </head>
 <body>
-  <h1>Territory Instruments OAuth Relay</h1>
-  <p class="muted">Completing sign-in and returning to your desktop app…</p>
-  <div id="card">
-    <p id="status" class="muted">Reading OAuth redirect parameters…</p>
-    <div id="fallback">
-      <p class="warn">Automatic handoff did not complete. Keep the app open and copy the full URL if support asks for it.</p>
-      <textarea id="fullUrl" readonly rows="3" spellcheck="false"></textarea>
-      <button type="button" id="btnCopyFullUrl">Copy full URL</button>
-    </div>
-  </div>
-  <noscript><p class="err">JavaScript is required for automatic handoff to the desktop app.</p></noscript>
-  <script>
-    window.setTimeout(function () {
-      if (window.__oauthRelayLoaded) return;
-      var statusEl = document.getElementById("status");
-      var fallbackEl = document.getElementById("fallback");
-      var fullUrlEl = document.getElementById("fullUrl");
-      if (statusEl) {
-        statusEl.textContent =
-          "Relay script did not load. Hard refresh this page (Cmd+Shift+R) and redeploy oauth-redirect.js.";
-        statusEl.className = "err";
-      }
-      if (fullUrlEl) fullUrlEl.value = window.location.href;
-      if (fallbackEl) fallbackEl.style.display = "block";
-    }, 1800);
-  </script>
-</body>
-</html>
-      <p class="warn">Automatic handoff did not complete. Keep the app open and copy the full URL if support asks for it.</p>
-      <textarea id="fullUrl" readonly rows="3" spellcheck="false"></textarea>
-      <button type="button" id="btnCopyFullUrl">Copy full URL</button>
-    </div>
-  </div>
-  <noscript><p class="err">JavaScript is required for automatic handoff to the desktop app.</p></noscript>
+    <p>Redirecting to the app...</p>
+    <script>
+        // Extract the authorization code from the URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        
+        if (code) {
+
+                     // window.location.href = `http://localhost:5173/dashboard/workflowmax/auth?code=${code}`;   //new dashboard being tested
+            // Redirect to your React app's OAuth callback route
+           // window.location.href = `http://localhost:5173/staff/auth/workflowmax?code=${code}`;
+
+                   // window.location.href = `http://localhost:5173/dashboard/wfm-authenticate?code=${code}`;
+
+             window.location.href = `http://localhost:3000/api/workflowmax/callback?code=${code}`;
+
+
+            
+            // window.location.href = `http://localhost:5076/0auth/callback/?code=${code}`;
+
+            // For production:
+            // window.location.href = `https://abinabdc.github.io/redirecting-web/oauth-callback?code=${code}`;
+        } else {
+            // If no code is found, show an error message
+            console.error('No authorization code found.');
+            document.body.innerHTML = "<p>Authorization failed. No code received.</p>";
+        }
+    </script>
 </body>
 </html>
