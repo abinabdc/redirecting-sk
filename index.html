@@ -1,31 +1,17 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>OAuth Redirect</title>
-</head>
-<body>
-    <p>Redirecting to the app...</p>
-    <script>
-        // Extract the authorization code from the URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const code = urlParams.get('code');
-        
-        if (code) {
+<script>
+  const urlParams = new URLSearchParams(window.location.search);
+  const code = urlParams.get("code");
+  const state = urlParams.get("state");
+  const error = urlParams.get("error");
 
-
-
-             window.location.href = `http://localhost:3000/api/workflowmax/callback?code=${code}`;
-
-
-            
-        
-        } else {
-
-            console.error('No authorization code found.');
-            document.body.innerHTML = "<p>Authorization failed. No code received.</p>";
-        }
-    </script>
-</body>
-</html>
+  if (error) {
+    window.location.href = `http://localhost:3000/api/workflowmax/callback?error=${encodeURIComponent(error)}`;
+  } else if (code && state) {
+    window.location.href =
+      `http://localhost:3000/api/workflowmax/callback` +
+      `?code=${encodeURIComponent(code)}` +
+      `&state=${encodeURIComponent(state)}`;
+  } else {
+    document.body.innerHTML = "<p>Authorization failed. Missing code/state.</p>";
+  }
+</script>
