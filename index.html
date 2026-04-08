@@ -8,7 +8,8 @@
     window.location.href = `http://localhost:3000/api/workflowmax/callback?error=${encodeURIComponent(error)}`;
   } else if (code && state) {
     window.location.href =
-      `http://localhost:3000/api/workflowmax/callback` +
+      // `http://localhost:3000/api/workflowmax/callback` +
+     ` https://your-domain.com/api/workflowmax/callback` +
       `?code=${encodeURIComponent(code)}` +
       `&state=${encodeURIComponent(state)}`;
   } else {
